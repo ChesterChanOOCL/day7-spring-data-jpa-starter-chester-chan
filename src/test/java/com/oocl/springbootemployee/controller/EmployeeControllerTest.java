@@ -42,8 +42,6 @@ class EmployeeControllerTest {
     @Autowired
     private JacksonTester<List<Employee>> employeesJacksonTester;
 
-    @Resource
-    JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
