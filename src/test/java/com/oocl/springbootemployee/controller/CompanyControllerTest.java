@@ -1,7 +1,7 @@
-package com.oocl.springbootemployee.controller;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
+//package com.oocl.springbootemployee.controller;
+//
+//import static org.assertj.core.api.Assertions.assertThat;
+//
 //import static org.assertj.core.api.Assertions.assertThat;
 //import static org.hamcrest.Matchers.hasSize;
 //import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 //@SpringBootTest
 //@AutoConfigureJsonTesters
 //@AutoConfigureMockMvc
-class CompanyControllerTest {
+//class CompanyControllerTest {
 //    @Autowired
 //    private MockMvc client;
 //
@@ -190,4 +190,4 @@ class CompanyControllerTest {
 //        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.NO_CONTENT.value());
 //        assertThat(companyRepository.findAll()).hasSize(4);
 //    }
-}
+//}
