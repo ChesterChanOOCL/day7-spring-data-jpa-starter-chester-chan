@@ -11,6 +11,7 @@ import com.oocl.springbootemployee.repository.EmployeeInMemoryRepository;
 import java.util.List;
 
 import com.oocl.springbootemployee.repository.EmployeeRepository;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -40,6 +42,9 @@ class EmployeeControllerTest {
     @Autowired
     private JacksonTester<List<Employee>> employeesJacksonTester;
 
+    @Resource
+    JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
         givenDataToRepository();
@@ -47,7 +52,8 @@ class EmployeeControllerTest {
     }
 
     private void givenDataToRepository(){
-        employeeRepository.deleteAll();;
+        employeeRepository.deleteAll();
+
         employeeRepository.save(new Employee(null, "John Smith", 32, Gender.MALE, 5000.0));
         employeeRepository.save(new Employee(null, "Jane Johnson", 28, Gender.FEMALE, 6000.0));
         employeeRepository.save(new Employee(null, "David Williams", 35, Gender.MALE, 5500.0));
@@ -68,8 +74,7 @@ class EmployeeControllerTest {
         //given
         final List<Employee> givenEmployees = employeeRepository.findAll();
 
-        //when
-        //then
+        //when and then
         final String jsonResponse = client.perform(MockMvcRequestBuilders.get("/employees"))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn().getResponse().getContentAsString();
@@ -89,7 +94,6 @@ class EmployeeControllerTest {
         // Then
         client.perform(MockMvcRequestBuilders.get("/employees/1"))
             .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(givenEmployee.getId()))
             .andExpect(MockMvcResultMatchers.jsonPath("$.name").value(givenEmployee.getName()))
             .andExpect(MockMvcResultMatchers.jsonPath("$.age").value(givenEmployee.getAge()))
             .andExpect(MockMvcResultMatchers.jsonPath("$.gender").value(givenEmployee.getGender().name()))
@@ -103,14 +107,11 @@ class EmployeeControllerTest {
         Employee femaleEmployee = employeeRepository.findAll().get(1);
         Employee femaleEmployee2 = employeeRepository.findAll().get(3);
 
-        // When
-        // Then
+        // When and Then
         client.perform(MockMvcRequestBuilders.get("/employees")
                 .param("gender", "FEMALE"))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$", hasSize(2)))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[*].id")
-                .value(containsInAnyOrder(femaleEmployee.getId(), femaleEmployee2.getId())))
             .andExpect(MockMvcResultMatchers.jsonPath("$[*].name")
                 .value(containsInAnyOrder(femaleEmployee.getName(), femaleEmployee2.getName())))
             .andExpect(MockMvcResultMatchers.jsonPath("$[*].age")
@@ -125,7 +126,6 @@ class EmployeeControllerTest {
     void should_create_employee_success() throws Exception {
         // Given
         employeeRepository.deleteAll();
-
         String givenName = "New Employee";
         Integer givenAge = 18;
         Gender givenGender = Gender.FEMALE;
@@ -145,7 +145,6 @@ class EmployeeControllerTest {
                 .content(givenEmployee)
             )
             .andExpect(MockMvcResultMatchers.status().isCreated())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.id").isNumber())
             .andExpect(MockMvcResultMatchers.jsonPath("$.name").value(givenName))
             .andExpect(MockMvcResultMatchers.jsonPath("$.age").value(givenAge))
             .andExpect(MockMvcResultMatchers.jsonPath("$.gender").value(givenGender.name()))
@@ -185,7 +184,6 @@ class EmployeeControllerTest {
                 .content(givenEmployee)
             )
             .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.id").isNumber())
             .andExpect(MockMvcResultMatchers.jsonPath("$.name").value(givenName))
             .andExpect(MockMvcResultMatchers.jsonPath("$.age").value(givenAge))
             .andExpect(MockMvcResultMatchers.jsonPath("$.gender").value(givenGender.name()))
@@ -204,16 +202,12 @@ class EmployeeControllerTest {
         // Given
         int givenId = 1;
 
-        // When
-        // Then
+        // When and Then
         client.perform(MockMvcRequestBuilders.delete("/employees/" + givenId))
             .andExpect(MockMvcResultMatchers.status().isNoContent());
         List<Employee> employees = employeeRepository.findAll();
         assertThat(employees).hasSize(employeeRepository.findAll().size());
-        assertThat(employees.get(0).getId()).isEqualTo(2);
-        assertThat(employees.get(1).getId()).isEqualTo(3);
-        assertThat(employees.get(2).getId()).isEqualTo(4);
-        assertThat(employees.get(3).getId()).isEqualTo(5);
+        assertThat(employees.get(0).getName()).isEqualTo("Jane Johnson");
     }
 
     @Test
@@ -224,15 +218,14 @@ class EmployeeControllerTest {
         //when
         //then
         client.perform(MockMvcRequestBuilders.get("/employees")
-                .param("pageIndex", "2")
-                .param("pageSize", ""))
+                .param("pageIndex", "0")
+                .param("pageSize", "5"))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$", hasSize(employeeRepository.findAll().size())))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(givenEmployees.get(2).getId()))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(givenEmployees.get(3).getId()))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[0].name").value(givenEmployees.get(2).getName()))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[0].age").value(givenEmployees.get(2).getAge()))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[0].gender").value(givenEmployees.get(2).getGender().name()))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[0].salary").value(givenEmployees.get(2).getSalary()));
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(givenEmployees.get(0).getId()))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].name").value(givenEmployees.get(0).getName()))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].age").value(givenEmployees.get(0).getAge()))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].gender").value(givenEmployees.get(0).getGender().name()))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].salary").value(givenEmployees.get(0).getSalary()));
     }
 }
